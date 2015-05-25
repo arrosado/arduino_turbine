@@ -21,6 +21,13 @@ const int ZERO = 14; // 0 lb
 const int ONE_POUND = 224.93438;
 const int THREE_POUNDS = 857; // 3.81 lb
 
+volatile byte REV; // Volatile data type to store revolutions
+unsigned long int rpm, maxRPM; 
+unsigned long time; 
+int ledPin = 12; 
+int led = 0, RPMlen, prevRPM; // Integers to store led value and current rpm and previous rpm
+long prevtime = 0; // Store idle time to toggle menu
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -32,21 +39,25 @@ void setup() {
   for (int thisReading = 0; thisReading < numReadings; thisReading++)    //This need to be in the set-up section to aviod resetting the array in the loop
     readings[thisReading] = 0;                                            // initialize all the readings in the array to 0
 
+  attachInterrupt(0, RPMCount, RISING); // Add high priority action (interrupt) when the sensor goes from low to high
+  REV = 0;
+  rpm = 0;
+  time = 0;
+  pinMode(ledPin, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  digitalWrite(3, HIGH); // VCC pin for sensor
+  digitalWrite(4, LOW); // GND pin for sensor
 }
 
-void loop() {
+void loop() 
+{
   // put your main code here, to run repeatedly:
   //GetTime();
   //GetTemperature();
-  //GetRPM();
-  GetTourque();
+  GetRPM();
+  //GetTourque();
   Serial.println("");
-
-  
-
-
-  //Serial.print("F = ");
-  //Serial.println(thermocouple.readFarenheit());
 
   //delay(1000);
 }
@@ -78,6 +89,49 @@ void GetTemperature()
 void GetRPM()
 {
   //ToDo:
+  long currtime = millis();
+  long idletime = currtime - prevtime;
+
+  if (REV >= 5) 
+  {
+    rpm = 30*1000/(millis() - time)*REV;
+
+    if (rpm > maxRPM)
+      maxRPM = rpm;
+
+      time = millis();
+
+      REV = 0;
+
+      int x = rpm;
+      while (x!=0)
+      {
+        x = x/10;
+        RPMlen++;
+      }
+
+      if (RPMlen!=prevRPM)
+      {
+        prevRPM = RPMlen;
+      }
+
+      Serial.print(rpm);
+
+      delay(500);
+
+      prevtime = currtime;
+  }
+
+  if (idletime > 5000)
+  {
+    Serial.println(maxRPM);
+    delay(2000);
+    Serial.println("IDLE STATE");
+    Serial.println("READY TO MEASURE");
+    delay(2000);
+    prevtime = currtime;
+  }
+
   Serial.print(",");
 }
 
@@ -94,7 +148,8 @@ void GetTourque()
   Serial.print(",");
 }
 
-void rollingReading() {
+void rollingReading() 
+{
   total = total - readings[index];              // subtract the last reading   
   readings[index] = analogRead(loadCell) - ZERO;      // read from the sensor
   total = total + readings[index];             // add the reading to the total:      
@@ -104,5 +159,20 @@ void rollingReading() {
   rollingAverage = total / numReadings;         
 //  Serial.println(rollingAverage);   
   delay(1);                              // delay in between reads for stability            
+}
+
+void RPMCount() // Everytime when the sensor goes from low to high, this function will be invoked
+{
+  REV++;
+
+  if (led == LOW)
+  {
+    led = HIGH; // Toggle status led
+  }
+  else
+  {
+    led = LOW;
+  }
+  digitalWrite(ledPin, led);
 }
 
