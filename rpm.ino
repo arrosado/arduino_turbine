@@ -11,6 +11,9 @@ int ledPin = 12;
 int led = 0, RPMlen, prevRPM; // Integers to store led value and current rpm and previous rpm
 long prevtime = 0; // Store idle time to toggle menu
 
+long fakeRPM = 200;
+long MAX_FAKE_RPM = 100000;
+
 void SetupRPMSystem()
 {
   // Print header for csv log file.
@@ -29,6 +32,11 @@ void SetupRPMSystem()
 
 void GetRPM()
 {
+  if (fakeRPM < MAX_FAKE_RPM)
+    fakeRPM+=300;
+    
+  Serial.print(fakeRPM);
+  
   long currtime = millis();
   long idletime = currtime - prevtime;
 
@@ -57,11 +65,11 @@ void GetRPM()
 
       //Serial.print(rpm);
 
-      delay(500);
+      //delay(500);
 
       prevtime = currtime;
   }
-
+/*
   if (idletime > 5000)
   {
     Serial.println("IDLE STATE");
@@ -69,7 +77,7 @@ void GetRPM()
     delay(2000);
     prevtime = currtime;
   }
-
+*/
   Serial.print(",");
 }
 

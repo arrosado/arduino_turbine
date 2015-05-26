@@ -16,10 +16,9 @@ void loop()
   // put your main code here, to run repeatedly:
   GetTime();
   GetTemperature();
-  //GetRPM();
   GetTourque();
+  GetRPM();
+  
   Serial.println("");
-
-  //delay(1000);
 }
 
